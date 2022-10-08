@@ -10,9 +10,9 @@ import { DeleteStudentDto } from './dto/delete-student.dto';
 export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 
+  //Create Student 
   @Post()
-  @ApiCreatedResponse({description:'Student Added Succesfully'})
-  @ApiResponse({status:201})
+  @ApiResponse({status:201, description:'Student Added Succesfully'})
   @ApiBadRequestResponse({status:400, description:'Bad Request'})
   @ApiBody({type: CreateStudentDto,description:"Student Registration"})
   async create(@Body() createStudentDto: CreateStudentDto):Promise<CreateStudentDto> {
@@ -20,32 +20,33 @@ export class StudentsController {
     return results
   }
 
-  @ApiCreatedResponse({description: 'Get All Students'})
-  @ApiResponse({status:200,type:ListStudentsdto})
+  //Get All Students
+  @ApiResponse({status:200,type:ListStudentsdto, description: 'Get All Students'})
   @Get()
  async findAll():Promise<Array<ListStudentsdto>> {
     let students = await this.studentsService.findAll();
     return students
   }
 
-  @ApiCreatedResponse({description: 'Get Student by Id'})
-  @ApiResponse({status:200, type:ListStudentsdto})
+  //Get Student By Id
+  @ApiResponse({status:200, type:ListStudentsdto, description: 'Get Student by Id'})
+  @ApiBadRequestResponse({status:404, description:'Student not found'})
   @Get(':id')
   async findOne(@Param('id') id: string):Promise<ListStudentsdto> {
     let student = await this.studentsService.findOne(id)
     return student
   }
 
-  @ApiCreatedResponse({description: 'Update Student by Id'})
-  @ApiResponse({status:200, type: UpdateStudentDto})
+  //Update Student
+  @ApiResponse({status:200, type: UpdateStudentDto, description: 'Update Student by Id'})
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateStudentDto: CreateStudentDto):Promise<UpdateStudentDto> {
     let result =  this.studentsService.update(id,updateStudentDto)
     return result
   }
 
-  @ApiCreatedResponse({description: 'Delete Student by Id'})
-  @ApiResponse({status:200, type:DeleteStudentDto})
+  //Delete User
+  @ApiResponse({status:200, type:DeleteStudentDto, description:'Delete Student by Id'})
   @Delete(':id')
   async remove(@Param('id') id: string):Promise<DeleteStudentDto> {
     let resultDelete = await this.studentsService.remove(id);

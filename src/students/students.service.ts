@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { v4 as uuid } from 'uuid';
@@ -14,29 +14,63 @@ export class StudentsService {
 
   //Save new student
  async create(createStudentDto: CreateStudentDto):Promise<CreateStudentDto> {
-   let student = await this.createStudent(createStudentDto)
+  try {
+    let student = await this.createStudent(createStudentDto)
     return student
+  } catch (error) {
+    console.log("error: ", error)
+    throw new InternalServerErrorException("Something was wrong, try again")
+  }
+   
   }
 
   //Get all students
   async findAll(): Promise<Array<ListStudentsdto>> {
-    let dataStudents = await this.getStudents()    
-    return dataStudents
+    try {
+      let dataStudents = await this.getStudents()    
+      return dataStudents
+    } catch (error) {
+      console.log("error: ", error)
+      throw new InternalServerErrorException("Something was wrong, try again")
+    }
+   
   }
 
+  //Get student by Id
   async findOne(id: string):Promise<ListStudentsdto> {
-    let dataStudent = await this.getByStudents(id)
-    return dataStudent
+    try {
+      let dataStudent = await this.getByStudents(id)
+      if(dataStudent.id == undefined || dataStudent.id == "") throw new NotFoundException("Student not found")
+      return dataStudent
+    } catch (error) {
+      console.log("error findOne: ", error)
+      throw new NotFoundException(error.message)
+    }
+  
   }
 
+  //Update Student
   async update(id: string, updateStudentDto: CreateStudentDto):Promise<UpdateStudentDto> {
-    let resultUpdate = await this.updateStudent(id,updateStudentDto)
-    return resultUpdate
+    try {
+      let resultUpdate = await this.updateStudent(id,updateStudentDto)
+      return resultUpdate
+    } catch (error) {
+      console.log("error: ", error)
+      throw new InternalServerErrorException("Something was wrong, try again")
+    }
+   
   }
 
+  //Delete Student
   async remove(id: string):Promise<DeleteStudentDto> {
-    let resultDelete = await this.deleteStudent(id)
+    try {
+      let resultDelete = await this.deleteStudent(id)
     return resultDelete
+    } catch (error) {
+      console.log("error: ", error)
+      throw new InternalServerErrorException("Something was wrong, try again")
+    }
+    
   }
 
 
@@ -49,7 +83,7 @@ export class StudentsService {
       updatedAt: new Date().toISOString(),
     };   
      try {
-      await this.connect.dynamoDB
+      await this.connect.dynamoDBClient
         .put({          
           TableName: 'students',
           Item: student,
@@ -73,7 +107,7 @@ export class StudentsService {
      await this.connect.dynamoDB.scan(params, (err: any, data: { Items: any[]; })=>{
                    if(err){
                      console.log("Error: ", err)
-                     reject(ListStudents)
+                     resolve(ListStudents)
                    }                  
                    data.Items.forEach((element:any) => {         
                      ListStudents.push({
@@ -93,7 +127,7 @@ export class StudentsService {
          
      } catch (error) {
        console.log(error)
-       reject(ListStudents)
+       resolve(ListStudents)
      }    
     })
     
@@ -117,30 +151,35 @@ export class StudentsService {
      await this.connect.dynamoDB.getItem(params, (err: any, data:{ Item: any})=>{
                    if(err){
                      console.log("Error: ", err)
-                     reject(ListStudents)
+                     resolve(ListStudents)
                    } 
-             
-                    ListStudents.id= data.Item.id.S
-                    ListStudents.firstname= data.Item.firstname.S
-                    ListStudents.lastname= data.Item.lastname.S
-                    ListStudents.age= data.Item.age.N
-                    ListStudents.telephone= data.Item.telephone.S
-                    ListStudents.degree= data.Item.degree.N
-                    ListStudents.createdAt= data.Item.createdAt.S
-                    ListStudents.updatedAt= data.Item.updatedAt.S
-                 
+                   if(!data.Item || data.Item == null || data.Item == undefined ){
+                       resolve(ListStudents)
+                   }
+                    else{
+                        ListStudents.id= data.Item.id.S
+                        ListStudents.firstname= data.Item.firstname.S
+                        ListStudents.lastname= data.Item.lastname.S
+                        ListStudents.age= data.Item.age.N
+                        ListStudents.telephone= data.Item.telephone.S
+                        ListStudents.degree= data.Item.degree.N
+                        ListStudents.createdAt= data.Item.createdAt.S
+                        ListStudents.updatedAt= data.Item.updatedAt.S
+                    }
                    resolve(ListStudents)
                   
                  })  
          
      } catch (error) {
        console.log(error)
-       reject(ListStudents)
+       resolve(ListStudents)
      }    
     })
     
     
   }
+
+
 
   //Delete Student by Id from DynamoDB
   private async deleteStudent(id: string): Promise<DeleteStudentDto> {  
